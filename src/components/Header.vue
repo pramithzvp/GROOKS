@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { ShoppingCart, Search, Moon, Sun } from 'lucide-vue-next'
+import { ShoppingCart, Search, Moon, Sun, User, LogOut } from 'lucide-vue-next'
 import { useCartStore } from '../stores/cart'
+import { useAuthStore } from '../stores/auth'
 import { useThemeStore } from '../stores/theme'
 import { storeToRefs } from 'pinia'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const themeStore = useThemeStore()
+const authStore = useAuthStore()
 
 const cartStore = useCartStore()
 const { totalItems } = storeToRefs(cartStore)
@@ -62,6 +64,31 @@ const handleSearch = (query: string) => {
             <Moon v-if="themeStore.theme === 'light'" class="w-6 h-6" />
             <Sun v-else class="w-6 h-6" />
           </button>
+          
+          <template v-if="authStore.isAuthenticated">
+            <div class="relative group pt-1 pb-1">
+              <button class="flex items-center gap-2 hover:text-yellow-400 transition-colors">
+                <User class="w-6 h-6" />
+                <span class="hidden sm:inline font-semibold">Hi, {{ authStore.currentUser?.name.split(' ')[0] }}</span>
+              </button>
+              <!-- Dropdown -->
+              <div class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden">
+                <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                  <p class="text-sm text-gray-900 dark:text-white font-medium">{{ authStore.currentUser?.name }}</p>
+                  <p class="text-xs text-gray-500 truncate">{{ authStore.currentUser?.email }}</p>
+                </div>
+                <button @click="authStore.logout()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 transition-colors">
+                  <LogOut class="w-4 h-4" /> Sign out
+                </button>
+              </div>
+            </div>
+          </template>
+          <template v-else>
+            <router-link to="/login" class="flex items-center gap-1 hover:text-yellow-400 transition-colors">
+              <User class="w-6 h-6" />
+              <span class="hidden sm:inline font-semibold mt-auto mb-1">Sign In</span>
+            </router-link>
+          </template>
           <router-link to="/cart" class="flex items-center gap-1 hover:text-yellow-400 transition-colors relative">
             <div class="relative">
               <ShoppingCart class="w-8 h-8" />
