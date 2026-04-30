@@ -12,16 +12,37 @@ const { items, totalPrice, totalItems } = storeToRefs(cartStore)
 const selectedPayment = ref('credit_card')
 const isProcessing = ref(false)
 const isSuccess = ref(false)
+const showGatewayModal = ref(false)
+const gatewayStatus = ref('waiting') // waiting, processing, success
 
 const handleCheckout = () => {
   if (items.value.length === 0) return
 
+  if (selectedPayment.value === 'credit_card') {
+    // Show dummy payment gateway
+    showGatewayModal.value = true
+    gatewayStatus.value = 'waiting'
+    return
+  }
+
   isProcessing.value = true
-  // Simulate network request
+  // Simulate network request for COD / Bank transfer
   setTimeout(() => {
     isProcessing.value = false
     isSuccess.value = true
     cartStore.clearCart()
+  }, 2000)
+}
+
+const processDummyPayment = () => {
+  gatewayStatus.value = 'processing'
+  setTimeout(() => {
+    gatewayStatus.value = 'success'
+    setTimeout(() => {
+      showGatewayModal.value = false
+      isSuccess.value = true
+      cartStore.clearCart()
+    }, 1000)
   }, 2000)
 }
 </script>
@@ -217,6 +238,69 @@ const handleCheckout = () => {
         </div>
       </div>
 
+    </div>
+  </div>
+
+  <!-- Dummy Payment Gateway Modal -->
+  <div v-if="showGatewayModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div class="bg-gray-50 border-b border-gray-100 p-4 flex justify-between items-center">
+        <div class="font-bold text-gray-900 flex items-center gap-2">
+          <ShieldCheck class="w-5 h-5 text-green-600" />
+          Secure Payment Gateway
+        </div>
+        <button v-if="gatewayStatus === 'waiting'" @click="showGatewayModal = false" class="text-gray-400 hover:text-gray-600">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      
+      <div class="p-6">
+        <div class="text-center mb-6">
+          <p class="text-sm text-gray-500 mb-1">GROOKS LLC</p>
+          <div class="text-3xl font-bold text-gray-900">${{ totalPrice.toFixed(2) }}</div>
+        </div>
+        
+        <div v-if="gatewayStatus === 'waiting'" class="space-y-4">
+          <div class="space-y-1">
+            <label class="text-sm font-semibold text-gray-700">Card Number</label>
+            <div class="relative">
+              <input type="text" value="4242 4242 4242 4242" readonly class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 outline-none font-mono tracking-widest text-sm">
+              <CreditCard class="w-5 h-5 text-gray-400 absolute left-3 top-3.5" />
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-1">
+              <label class="text-sm font-semibold text-gray-700">Expiry</label>
+              <input type="text" value="12/28" readonly class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 outline-none font-mono">
+            </div>
+            <div class="space-y-1">
+              <label class="text-sm font-semibold text-gray-700">CVC</label>
+              <input type="password" value="123" readonly class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 outline-none font-mono tracking-widest">
+            </div>
+          </div>
+          <p class="text-xs text-center text-gray-400 mt-2">This is a simulated payment interface. No real money will be charged.</p>
+          <button @click="processDummyPayment" class="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors shadow-md shadow-blue-200">
+            Pay ${{ totalPrice.toFixed(2) }}
+          </button>
+        </div>
+        
+        <div v-else-if="gatewayStatus === 'processing'" class="py-8 text-center flex flex-col items-center">
+          <svg class="animate-spin h-10 w-10 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p class="text-gray-600 font-medium animate-pulse">Processing your payment...</p>
+          <p class="text-xs text-gray-400 mt-2">Please do not close this window</p>
+        </div>
+        
+        <div v-else-if="gatewayStatus === 'success'" class="py-8 text-center flex flex-col items-center animate-in zoom-in duration-300">
+          <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4 text-green-600">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <p class="text-gray-900 font-bold text-xl">Payment Successful!</p>
+          <p class="text-gray-500 mt-1">Redirecting...</p>
+        </div>
+      </div>
     </div>
   </div>
 </template>
